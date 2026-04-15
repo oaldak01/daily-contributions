@@ -3,7 +3,7 @@ name: Daily Contributions
 on:
   schedule:
     - cron: '0 0 * * 1-5'   # Mon–Fri at 00:00 UTC
-  workflow_dispatch:        # allow manual run from the Actions tab
+  workflow_dispatch:         # allow manual run from the Actions tab
 
 jobs:
   make-contribution:
