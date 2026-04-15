@@ -2,34 +2,48 @@ name: Daily Contributions
 
 on:
   schedule:
-    - cron: '0 0 * * 1-5'   # Mon–Fri at 00:00 UTC
-  workflow_dispatch:         # allow manual run from the Actions tab
+    - cron: '0 0 * * *'  # triggers daily, but won't always commit
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   make-contribution:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@v3
 
-      - name: Make daily contribution
+      - name: Random skip (contributes ~5 out of 7 days)
+        id: should_run
         run: |
-          echo "Making daily contribution"
-          echo "$(date)" >> README.md
+          RAND=$((RANDOM % 7))
+          if [ $RAND -lt 2 ]; then
+            echo "Skipping today"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v9
-        with:
-          author_name: "GitHub Actions"
-          author_email: "actions@github.com"
-          message: "Daily contribution"
-          add: "README.md"
+      - name: Random delay (0–8 hours)
+        if: steps.should_run.outputs.skip == 'false'
+        run: |
+          DELAY=$((RANDOM % 28800))
+          echo "Sleeping for $DELAY seconds"
+          sleep $DELAY
 
-      - name: Push changes
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+      - name: Make contribution
+        if: steps.should_run.outputs.skip == 'false'
+        run: echo "$(date)" >> README.md
+
+      - name: Commit and push
+        if: steps.should_run.outputs.skip == 'false'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add README.md
+          git commit -m "Daily contribution"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
