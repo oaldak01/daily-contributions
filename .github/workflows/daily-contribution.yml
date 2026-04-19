@@ -40,8 +40,8 @@ jobs:
       - name: Commit and push
         if: steps.should_run.outputs.skip == 'false'
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "oaldak01"
+          git config user.email "sup2021@icloud.com"
           git add README.md
           git commit -m "Daily contribution"
           git push
