@@ -18,7 +18,7 @@ jobs:
       - name: Random skip (contributes ~5 out of 7 days)
         id: should_run
         run: |
-          RAND=$((RANDOM % 7))
+          RAND=$((RANDOM % 6))
           if [ $RAND -lt 2 ]; then
             echo "Skipping today"
             echo "skip=true" >> $GITHUB_OUTPUT
