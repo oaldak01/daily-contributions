@@ -1,8 +1,8 @@
-name: Daily Contributions
+name: Weekly Capped Contributions (Random ≤5)
 
 on:
   schedule:
-    - cron: '0 0 * * *'  # triggers daily, but won't always commit
+    - cron: '0 0 * * *'  # runs daily
   workflow_dispatch:
 
 permissions:
@@ -15,30 +15,40 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Random skip (contributes ~5 out of 7 days)
+      - name: Count commits this week
+        id: weekly_count
+        run: |
+          COUNT=$(git log --since="last monday" --pretty=oneline | wc -l)
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+
+      - name: Decide to run (random + cap 5/week)
         id: should_run
         run: |
-          RAND=$((RANDOM % 7))
-          if [ $RAND -lt 2 ]; then
-            echo "Skipping today"
-            echo "skip=true" >> $GITHUB_OUTPUT
+          COUNT=${{ steps.weekly_count.outputs.count }}
+          RAND=$((RANDOM % 7))  # randomness layer
+          
+          if [ "$COUNT" -ge 5 ]; then
+            echo "Weekly limit reached"
+            echo "run=false" >> $GITHUB_OUTPUT
+          elif [ $RAND -lt 3 ]; then
+            echo "Random skip"
+            echo "run=false" >> $GITHUB_OUTPUT
           else
-            echo "skip=false" >> $GITHUB_OUTPUT
+            echo "run=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Random delay (0–8 hours)
-        if: steps.should_run.outputs.skip == 'false'
+        if: steps.should_run.outputs.run == 'true'
         run: |
           DELAY=$((RANDOM % 28800))
-          echo "Sleeping for $DELAY seconds"
           sleep $DELAY
 
       - name: Make contribution
-        if: steps.should_run.outputs.skip == 'false'
+        if: steps.should_run.outputs.run == 'true'
         run: echo "$(date)" >> README.md
 
       - name: Commit and push
-        if: steps.should_run.outputs.skip == 'false'
+        if: steps.should_run.outputs.run == 'true'
         run: |
           git config user.name "oaldak01"
           git config user.email "sup2021@icloud.com"
